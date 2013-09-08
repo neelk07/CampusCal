@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+
+  <head>
+    <title></title>
+  </head>
+
+  <body>
+      <h1>Hi World</h1>
+        {% if user.is_authenticated %}
+        <h1>Hi {{user.first_name }} {{user.last_name}}</h1>
+
+        {% endif %}
+
+        {% if not user.is_authenticated %}
+              <h1>Not authenticated</h1>
+        {% endif %}
+
+        <a href="{% url 'auth_logout' %}?next={{ request.path|urlencode }}">logout</a> 
+  </body>
+
+</html>
