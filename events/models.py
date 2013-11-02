@@ -9,8 +9,8 @@ class Event(models.Model):
     location = models.CharField(max_length=300)
     host = models.CharField(max_length=200)
     date = models.DateTimeField()
-    male = models.IntegerField()
-    female = models.IntegerField()
+    male = models.IntegerField(default='0')
+    female = models.IntegerField(default='0')
     facebook_link = models.URLField(blank=True)
 
     def __unicode__(self):

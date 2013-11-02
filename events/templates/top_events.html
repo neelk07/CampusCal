@@ -6,13 +6,12 @@
             
 
             <div class="pure-u-2-3">
-                <div class="l-box splash-text">
-                    <h1 class="splash-head">CampusCal</h1>
+                <div class="l-box">
+                    <h3>Most Recent Events Happening At University of Illinois Urbana-Champaign</h3>
 
-                    <h2 class="splash-subhead">Discover What's Happening On Your Campus!</h2>
+                    <h2>Discover What's Happening On Your Campus!</h2>
                       {% if user.is_authenticated %}
                       <h1>Hey {{user.first_name }} {{user.last_name}}!</h1>
-                      <a href="{% url 'auth_logout' %}?next={{ request.path|urlencode }}" class="pure-button primary-button">Log Out</a> 
 
                       {% endif %}
 

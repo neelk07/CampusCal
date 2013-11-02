@@ -17,8 +17,6 @@
                     <h2 class="splash-subhead">Discover What's Happening On Your Campus!</h2>
                       {% if user.is_authenticated %}
                       <h1>Hey {{user.first_name }} {{user.last_name}}!</h1>
-                      <a href="{% url 'auth_logout' %}?next={{ request.path|urlencode }}" class="pure-button primary-button">Log Out</a> 
-
                       {% endif %}
 
                       {% if not user.is_authenticated %}

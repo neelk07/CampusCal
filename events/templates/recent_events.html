@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="pure-skin-mine">
+    <div class="splash">
+        <div class="pure-g-r">
+            
+
+            <div class="pure-u-4-5">
+                <div class="l-box">
+                    <h3>Most Recent Events Happening At University of Illinois Urbana-Champaign</h3>
+
+                    <table class="pure-table pure-table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Location</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+
+                            <!-- for loop for events -->
+                            {% for recent_event in recent_events %}
+
+                            <tr>
+                                <td>{{recent_event.title}}</td>
+                                <td>{{recent_event.description}}</td>
+                                <td>{{recent_event.location}}</td>
+                                <td>{{recent_event.date}}</td>
+                            </tr>
+
+                            {% endfor %}
+
+                           
+                        </tbody>
+                    </table>
+                    <p>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="content">
+        <div class="pure-g-r">
+            
+        </div>
+
+        <div class="l-box ribbon">
+            <h2>Get started now.</h2>
+            <a href="#" class="pure-button primary-button">Sign up</a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+
