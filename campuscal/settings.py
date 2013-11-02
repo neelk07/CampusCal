@@ -88,6 +88,7 @@ SECRET_KEY = 'oyf&-7op6%a1ly0$w^*=ar3z+7s@v&pml7xk44$hd@copspcw='
 # facebook app credentials
 FACEBOOK_APP_ID = '510727182346181'
 FACEBOOK_APP_SECRET = '8b8e29e226f8a002619141da1736be64'
+FACEBOOK_LOGIN_DEFAULT_REDIRECT = '/top/'
 
 AUTH_USER_MODEL = 'django_facebook.FacebookCustomUser'
 AUTH_PROFILE_MODULE = 'django_facebook.FacebookProfile'
@@ -149,8 +150,8 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     'django.contrib.admindocs',
-    'dynamic_scraper',
     'django_facebook',
+    'events',
 )
 
 # A sample logging configuration. The only tangible logging

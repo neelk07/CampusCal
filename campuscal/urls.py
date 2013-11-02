@@ -10,6 +10,7 @@ urlpatterns = patterns('',
     # url(r'^campuscal/', include('campuscal.foo.urls')),
 
     url(r'^$', landing_page),
+    url(r'^top/$',top_events_page),
     # Uncomment the admin/doc line below to enable admin documentation:
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
