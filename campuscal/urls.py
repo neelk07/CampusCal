@@ -11,6 +11,7 @@ urlpatterns = patterns('',
 
     url(r'^$', landing_page),
     url(r'^recent/$',recent_events_page),
+    url(r'^save/$', event_save_page),
     # Uncomment the admin/doc line below to enable admin documentation:
     url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 

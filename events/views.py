@@ -30,13 +30,14 @@ def landing_page(request):
 def recent_events_page(request,graph):
 	#recent_events = Event.objects.order_by('-created')[:10]
 
-	me = graph.get('me')
-	friends = graph.get('me/friends')
-	feed = graph.get('me/feed')
-	name = me['languages']
+	#me = graph.get('me')
+	#friends = graph.get('me/friends')
+	#feed = graph.get('me/feed')
+	#name = graph.get('me')['name']
+	#print name
 
-	for n in name:
-		print n['name']
+	#for n in name:
+	#	print n['name']
 
 	recent_events = Event.objects.raw('SELECT "events_event"."id", "events_event"."created", "events_event"."title", "events_event"."description", "events_event"."location", "events_event"."host", "events_event"."date", "events_event"."male", "events_event"."female", "events_event"."facebook_link" FROM "events_event" ORDER BY "events_event"."created" DESC LIMIT 10')
 	variables = RequestContext(request,
@@ -49,16 +50,22 @@ def recent_events_page(request,graph):
 
 def _event_save(request, form, graph):
 
+			#retrieve host name
+			#me = graph.get('me')
+			#name = me['name']
+			  
+
             # Create or get event.
             event, created = Event.objects.get_or_create(
-              	title = form.cleaned_data['title'],
-              	description = form.cleaned_data['description'],
-              	location = form.cleaned_data['location'],
-              	time = form.cleaned_data['time']
+              host = graph.get('me')['name'],
+              title = form.cleaned_data['title'],
+              description = form.cleaned_data['description'],
+              location = form.cleaned_data['location'],
+              time = form.cleaned_data['time']
             )
 
             # Update event title
-          
+            
             # Update event description.
             
             # Update event date
@@ -76,3 +83,43 @@ def _event_save(request, form, graph):
             # Save event to database.
             event.save()
             return event
+
+
+def event_save_page(request):
+    if request.method == 'POST':
+      form = EventSaveForm(request.POST)
+      if form.is_valid():
+          event = _event_save(request, form, graph)
+          return HttpResponseRedirect(
+                '/'
+          )
+    else:
+      form = EventSaveForm()
+      variables = RequestContext(request, {
+      	'form': form
+       })
+    return render_to_response('event_save.html', variables)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
