@@ -1,3 +1,6 @@
+import urllib2
+import json
+import feedparser
 from django.contrib.auth.models import User
 from django.shortcuts import render_to_response
 from events.forms import *
@@ -22,8 +25,62 @@ ITEMS_PER_PAGE = 10
 
 
 def landing_page(request):
-    context = RequestContext(request)
-    return render_to_response('landing.html', context)
+
+	context = RequestContext(request)
+
+	url = 'http://www.krannertcenter.com/handlers/calendarjson.ashx'
+	serialized_data = urllib2.urlopen(url).read()
+	data = json.loads(serialized_data)
+
+	count = 0
+
+	#need to find way to retrieve json object name
+	for date in data:
+
+		#prints the day
+		event_date = date
+
+		#iterates over every item in day	
+		for d in data[date]:
+
+			#for every event print out it's title
+			count = count + 1
+			title = d['Event']
+			price = d['Price']
+			description = d['Description']
+			location = d['Location']
+			time = d['Time']
+			link = d['EventUrl']
+
+			#can be used for event photos
+			image_url = d['defaultimage']
+
+
+			Event.objects.create(title = title, description = description, location = location, host="krannertcenter", date = "2013-12-13", link = link)
+
+	
+
+
+	d = feedparser.parse('http://canopyclub.com/events/feed/')
+
+	location = "The Canopy Club"
+
+	#entries is list of all events from feed
+	for entry in d.entries:
+		title = entry['title']
+		description = entry['description']
+		link = entry['link']
+		
+		
+		
+			
+		
+		
+		
+
+	
+
+	return render_to_response('landing.html', context)
 
 
 @facebook_required_lazy
@@ -99,6 +156,7 @@ def event_save_page(request):
       	'form': form
        })
     return render_to_response('event_save.html', variables)
+
 
 
 

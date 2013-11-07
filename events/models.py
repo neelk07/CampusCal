@@ -6,7 +6,7 @@ class Tag(models.Model):
 
     def __unicode__(self):
         return self.name
-        
+
 
 
 class Event(models.Model):
@@ -18,8 +18,8 @@ class Event(models.Model):
     date = models.DateTimeField()
     male = models.IntegerField(default='0')
     female = models.IntegerField(default='0')
-    facebook_link = models.URLField(blank=True)
-    tag = models.ManyToManyField(Tag)
+    link = models.URLField(blank=True)
+    tag = models.ManyToManyField(Tag,blank=True, null=True)
 
     def __unicode__(self):
         return self.title
