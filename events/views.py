@@ -27,65 +27,12 @@ ITEMS_PER_PAGE = 10
 def landing_page(request):
 
 	context = RequestContext(request)
-
-	url = 'http://www.krannertcenter.com/handlers/calendarjson.ashx'
-	serialized_data = urllib2.urlopen(url).read()
-	data = json.loads(serialized_data)
-
-	count = 0
-
-	#need to find way to retrieve json object name
-	for date in data:
-
-		#prints the day
-		event_date = date
-
-		#iterates over every item in day	
-		for d in data[date]:
-
-			#for every event print out it's title
-			count = count + 1
-			title = d['Event']
-			price = d['Price']
-			description = d['Description']
-			location = d['Location']
-			time = d['Time']
-			link = d['EventUrl']
-
-			#can be used for event photos
-			image_url = d['defaultimage']
-
-
-			Event.objects.create(title = title, description = description, location = location, host="krannertcenter", date = "2013-12-13", link = link)
-
-	
-
-
-	d = feedparser.parse('http://canopyclub.com/events/feed/')
-
-	location = "The Canopy Club"
-
-	#entries is list of all events from feed
-	for entry in d.entries:
-		title = entry['title']
-		description = entry['description']
-		link = entry['link']
-		
-		
-		
-			
-		
-		
-		
-
-	
-
 	return render_to_response('landing.html', context)
 
 
 @facebook_required_lazy
 def recent_events_page(request,graph):
-	#recent_events = Event.objects.order_by('-created')[:10]
+	recent_events = Event.objects.order_by('-created')[:10]
 
 	#me = graph.get('me')
 	#friends = graph.get('me/friends')
@@ -96,7 +43,7 @@ def recent_events_page(request,graph):
 	#for n in name:
 	#	print n['name']
 
-	recent_events = Event.objects.raw('SELECT "events_event"."id", "events_event"."created", "events_event"."title", "events_event"."description", "events_event"."location", "events_event"."host", "events_event"."date", "events_event"."male", "events_event"."female", "events_event"."facebook_link" FROM "events_event" ORDER BY "events_event"."created" DESC LIMIT 10')
+	#recent_events = Event.objects.raw('SELECT "events_event"."id", "events_event"."created", "events_event"."title", "events_event"."description", "events_event"."location", "events_event"."host", "events_event"."date", "events_event"."male", "events_event"."female", "events_event"."facebook_link" FROM "events_event" ORDER BY "events_event"."created" DESC LIMIT 10')
 	variables = RequestContext(request,
 		{
 			'recent_events':recent_events
@@ -158,6 +105,57 @@ def event_save_page(request):
     return render_to_response('event_save.html', variables)
 
 
+def retrieve_events(request):
+	return
+
+
+
+def canopy_club_events(request):
+	d = feedparser.parse('http://canopyclub.com/events/feed/')
+
+	location = "The Canopy Club"
+
+	#entries is list of all events from feed
+	for entry in d.entries:
+		title = entry['title']
+		print title
+		description = entry['description']
+		link = entry['link']
+
+	#url1 ='http://acm.uiuc.edu/calendar/feed.ics'
+	#cal = urllib2.urlopen(url1).read()
+
+
+def krannert_events(request):
+
+	url = 'http://www.krannertcenter.com/handlers/calendarjson.ashx'
+	serialized_data = urllib2.urlopen(url).read()
+	data = json.loads(serialized_data)
+
+	count = 0
+
+	#need to find way to retrieve json object name
+	for date in data:
+
+		#prints the day
+		event_date = date
+
+		#iterates over every item in day	
+		for d in data[date]:
+
+			#for every event print out it's title
+			count = count + 1
+
+			i_d = d['ID']
+			title = d['Event']
+			price = d['Price']
+			description = d['Description']
+			location = d['Location']
+			time = d['Time']
+			link = d['EventUrl']
+
+			#can be used for event photos
+			image_url = d['defaultimage']
 
 
 
