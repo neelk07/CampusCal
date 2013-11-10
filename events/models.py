@@ -29,7 +29,7 @@ class Event(models.Model):
     time = models.CharField(max_length = 100)
     host = models.IntegerField()
 
-    price = models.IntegerField(blank=True)
+    price = models.CharField(max_length = 100, blank=True)
     male = models.IntegerField(default='0')
     female = models.IntegerField(default='0')
     

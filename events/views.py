@@ -1,6 +1,7 @@
 import urllib2
 import json
 import feedparser
+from time import strptime
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.shortcuts import render_to_response
@@ -58,19 +59,39 @@ def profile_page(request,graph):
 	if pref == 0:
 		#algorithm for suggestions
 		me = graph.get('me')
+		print me
 		friends = graph.get('me/friends')
 		music = graph.get('me/music')
 		movies = graph.get('me/movies')
 		tv = graph.get('me/television')
-		langs = me['languages']
+
+		try:
+		    music_count = len(music['data'])
+		except Exception as e:
+		    music_count = 0
+
+		try:
+		    sports = len(me['sports'])
+		except Exception as e:
+		    sports = 0
+
+		try:
+		    lang_count = len(me['languages'])
+		except Exception as e:
+		    lang_count= 0
+
 
 		#get counts for each
 		music_count = len(music['data'])
 		movie_count = len(movies['data'])
 		tv_count = len(tv['data'])
-		lang_count = 5*len(langs)
-		sports = 2*len(me['sports'] + me['favorite_athletes'] + me['favorite_teams'])
+		
+		lang_count = 5*lang_count
+		
+		sports = 2*sports
+		
 		social_count = len(friends['data'])/20
+		
 		art_count = 2*tv_count + movie_count
 		
 		#debugging
@@ -103,8 +124,7 @@ def profile_page(request,graph):
 			
 	else:
 		name = "neel"
-		print type(name)
-		#pref_ob.delete()
+		
 
 
 	#me = graph.get('me/television')
@@ -270,6 +290,7 @@ def krannert_events(request):
 		#iterates over every item in day	
 		for d in data[date]:
 
+
 			#for every event print out it's title
 			count = count + 1
 
@@ -281,8 +302,24 @@ def krannert_events(request):
 			time = d['Time']
 			link = d['EventUrl']
 
+			date = event_date.split();
+			print date
+
+			print strptime(date[1],'%b').tm_mon
+
+
+
+
 			#can be used for event photos
 			image_url = d['defaultimage']
+
+			Event.objects.create(title = title, description = description, location = location, date = event_date, time = time)
+
+
+
+	context = RequestContext(request)
+	return render_to_response('landing.html', context)
+
 
 
 
