@@ -10,6 +10,7 @@ urlpatterns = patterns('',
     # url(r'^campuscal/', include('campuscal.foo.urls')),
 
     url(r'^$', landing_page),
+    url(r'^profile/$', profile_page),
     url(r'^recent/$',recent_events_page),
     url(r'^save/$', event_save_page),
     # Uncomment the admin/doc line below to enable admin documentation:

@@ -26,7 +26,7 @@ class Event(models.Model):
     description = models.TextField()
     location = models.CharField(max_length=300)
     date = models.DateField()
-    time = models.TimeField()
+    time = models.CharField(max_length = 100)
     host = models.IntegerField()
 
     price = models.IntegerField(blank=True)
@@ -44,10 +44,11 @@ class Event(models.Model):
 
 class UserPref(models.Model):
     f_id = models.IntegerField()
-    tag = models.ManyToManyField(Tag,blank=True, null=True)
+    primary = models.CharField(max_length= 100)
+    secondary = models.CharField(max_length = 100)
 
     def __unicode__(self): 
-        return self.f_id
+        return unicode(self.f_id)
 
 
 class Going(models.Model):

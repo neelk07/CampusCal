@@ -1,6 +1,7 @@
 import urllib2
 import json
 import feedparser
+from datetime import datetime
 from django.contrib.auth.models import User
 from django.shortcuts import render_to_response
 from events.forms import *
@@ -30,11 +31,96 @@ def landing_page(request):
 	return render_to_response('landing.html', context)
 
 
-@facebook_required_lazy
-def recent_events_page(request,graph):
-	recent_events = Event.objects.order_by('-created')[:10]
 
-	#me = graph.get('me')
+def recent_events_page(request,graph):
+
+	me = graph('me')
+	me = me['data']
+	print me
+
+	context = RequestContext(request)
+	return render_to_response('profile.html', context)
+
+
+@facebook_required_lazy
+def profile_page(request,graph):
+	#recent_events = Event.objects.order_by('-created')[:10]
+
+	me = graph.get('me')
+ 	fid = me['id']
+ 	fid = int(fid)
+
+ 	#check if preferences for this user is saved
+	pref = UserPref.objects.filter(f_id= fid).count()
+	pref_ob = UserPref.objects.filter(f_id= fid)
+
+
+	if pref == 0:
+		#algorithm for suggestions
+		me = graph.get('me')
+		friends = graph.get('me/friends')
+		music = graph.get('me/music')
+		movies = graph.get('me/movies')
+		tv = graph.get('me/television')
+		langs = me['languages']
+
+		#get counts for each
+		music_count = len(music['data'])
+		movie_count = len(movies['data'])
+		tv_count = len(tv['data'])
+		lang_count = 5*len(langs)
+		sports = 2*len(me['sports'] + me['favorite_athletes'] + me['favorite_teams'])
+		social_count = len(friends['data'])/20
+		art_count = 2*tv_count + movie_count
+		
+		#debugging
+		print "Sports"
+		print sports
+		print "Music" 
+		print  music_count
+		print "Art"
+		print art_count
+		print "Cultural"
+		print lang_count
+		print "Social"
+		print social_count
+
+		#retrieve primary and secondary prefs
+		prefs = ["Sports", "Music", "Art", "Cultural", "Social"]
+		prefs_num = [sports, music_count, art_count, lang_count, social_count]
+
+		primary = prefs_num.index(max(prefs_num))
+		pref1 = prefs[primary]
+
+		prefs_num.remove(max(prefs_num))
+		prefs.remove(pref1)
+
+		secondary = prefs_num.index(max(prefs_num))
+		pref2 = prefs[secondary]
+
+		UserPref.objects.create(f_id = fid, primary = pref1, secondary = pref2)		
+
+			
+	else:
+		name = "neel"
+		print type(name)
+		#pref_ob.delete()
+
+
+	#me = graph.get('me/television')
+	#music = graph.get('me/music')
+	#artists = music['data']
+	#movies = graph.get('me/movies')
+	#data = me['data']
+	#print len(data)
+	#print data
+	
+	
+	#id = me['id']
+	#friends = graph.get('me/friends')
+	#data = friends['data']
+	#for d in data:
+	#	print d['name']
 	#friends = graph.get('me/friends')
 	#feed = graph.get('me/feed')
 	#name = graph.get('me')['name']
@@ -44,11 +130,8 @@ def recent_events_page(request,graph):
 	#	print n['name']
 
 	#recent_events = Event.objects.raw('SELECT "events_event"."id", "events_event"."created", "events_event"."title", "events_event"."description", "events_event"."location", "events_event"."host", "events_event"."date", "events_event"."male", "events_event"."female", "events_event"."facebook_link" FROM "events_event" ORDER BY "events_event"."created" DESC LIMIT 10')
-	variables = RequestContext(request,
-		{
-			'recent_events':recent_events
-		})
-	return render_to_response('recent_events.html',variables)
+	context = RequestContext(request)
+	return render_to_response('profile.html', context)
 
 
 
@@ -124,6 +207,50 @@ def canopy_club_events(request):
 
 	#url1 ='http://acm.uiuc.edu/calendar/feed.ics'
 	#cal = urllib2.urlopen(url1).read()
+
+
+def illinois_union_events(request):
+
+	d = feedparser.parse('http://illinois.edu/calendar/rss/4061.xml')
+	location = "Illinois Union"
+	#entries is list of all events from feed
+	for entry in d.entries:
+		title = entry['title']
+		description = entry['description']
+		link = entry['link']
+		date = entry['published']
+
+		#manipulation to get date and time
+		words = date.split()
+
+		date =  words[2] + " " + words[1] + ", " + words[3]
+		
+		#retrieve and convert time from 24 hour to 12 hour clock
+		time = words[4]
+		d = datetime.strptime(time, "%H:%M:%S")
+		time = d.strftime("%I:%M %p")
+
+def lctc_film(request):
+
+	d = feedparser.parse('http://illinois.edu/calendar/rss/4761.xml')
+	location = "Foreign Language Building 1080"
+	#entries is list of all events from feed
+	for entry in d.entries:
+		title = entry['title']
+		description = entry['description']
+		link = entry['link']
+		date = entry['published']
+
+		#manipulation to get date and time
+		words = date.split()
+
+		date =  words[2] + " " + words[1] + ", " + words[3]
+		
+		#retrieve and convert time from 24 hour to 12 hour clock
+		time = words[4]
+		d = datetime.strptime(time, "%H:%M:%S")
+		time = d.strftime("%I:%M %p")
+		
 
 
 def krannert_events(request):
