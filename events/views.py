@@ -44,7 +44,6 @@ def recent_events_page(request):
 def profile_page(request,graph):
 
 	
-
 	me = graph.get('me')
  	fid = me['id']
  	fid = int(fid)
@@ -176,6 +175,18 @@ def event_save_page(request,graph):
     return render_to_response('event_save.html',variables)
 
 
+def update_event(request,id):
+	event = Event.objects.get(id=id)
+	form= EventForm(request.POST or None, instance=event)
+	if request.method == 'POST':
+		if form.is_valid():
+			form.save()
+			return HttpResponseRedirect('/')
+	variables = RequestContext(request, {
+		'form': form
+		})
+	return render_to_response('event_save.html', variables)
+    
 
 
 
