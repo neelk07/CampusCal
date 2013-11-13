@@ -2,6 +2,7 @@ import urllib2
 import json
 import feedparser
 from time import strptime
+from time import mktime
 from datetime import datetime
 from django.contrib.auth.models import User
 from django.shortcuts import render_to_response
@@ -27,29 +28,29 @@ ITEMS_PER_PAGE = 10
 
 
 def landing_page(request):
-
 	context = RequestContext(request)
 	return render_to_response('landing.html', context)
 
 
 
-def recent_events_page(request,graph):
-
-	me = graph('me')
-	me = me['data']
-	print me
-
-	context = RequestContext(request)
-	return render_to_response('profile.html', context)
+def recent_events_page(request):
+	recent_events = Event.objects.raw('SELECT "events_event"."id", "events_event"."created", "events_event"."title", "events_event"."description", "events_event"."location", "events_event"."host", "events_event"."date", "events_event"."male", "events_event"."female" FROM "events_event" ORDER BY "events_event"."created" DESC LIMIT 10')
+	variables = RequestContext(request, {
+      	'recent_events': recent_events})
+	return render_to_response('recent_events.html', variables)	
 
 
 @facebook_required_lazy
 def profile_page(request,graph):
-	#recent_events = Event.objects.order_by('-created')[:10]
+
+	
 
 	me = graph.get('me')
  	fid = me['id']
  	fid = int(fid)
+
+ 	#retrieve events create by you
+ 	my_events = Event.objects.filter(host = fid)
 
  	#check if preferences for this user is saved
 	pref = UserPref.objects.filter(f_id= fid).count()
@@ -95,16 +96,16 @@ def profile_page(request,graph):
 		art_count = 2*tv_count + movie_count
 		
 		#debugging
-		print "Sports"
-		print sports
-		print "Music" 
-		print  music_count
-		print "Art"
-		print art_count
-		print "Cultural"
-		print lang_count
-		print "Social"
-		print social_count
+		#print "Sports"
+		#print sports
+		#print "Music" 
+		#print  music_count
+		#print "Art"
+		#print art_count
+		#print "Cultural"
+		#print lang_count
+		#print "Social"
+		#print social_count
 
 		#retrieve primary and secondary prefs
 		prefs = ["Sports", "Music", "Art", "Cultural", "Social"]
@@ -120,13 +121,10 @@ def profile_page(request,graph):
 		pref2 = prefs[secondary]
 
 		UserPref.objects.create(f_id = fid, primary = pref1, secondary = pref2)		
-
 			
 	else:
 		name = "neel"
 		
-
-
 	#me = graph.get('me/television')
 	#music = graph.get('me/music')
 	#artists = music['data']
@@ -150,68 +148,44 @@ def profile_page(request,graph):
 	#	print n['name']
 
 	#recent_events = Event.objects.raw('SELECT "events_event"."id", "events_event"."created", "events_event"."title", "events_event"."description", "events_event"."location", "events_event"."host", "events_event"."date", "events_event"."male", "events_event"."female", "events_event"."facebook_link" FROM "events_event" ORDER BY "events_event"."created" DESC LIMIT 10')
-	context = RequestContext(request)
-	return render_to_response('profile.html', context)
+	variables = RequestContext(request, {
+      	'my_events': my_events})
+	return render_to_response('profile.html', variables)
 
 
+@facebook_required_lazy
+def event_save_page(request,graph):
 
-def _event_save(request, form, graph):
-
-			#retrieve host name
-			#me = graph.get('me')
-			#name = me['name']
-			  
-
-            # Create or get event.
-            event, created = Event.objects.get_or_create(
-              host = graph.get('me')['name'],
-              title = form.cleaned_data['title'],
-              description = form.cleaned_data['description'],
-              location = form.cleaned_data['location'],
-              time = form.cleaned_data['time']
-            )
-
-            # Update event title
-            
-            # Update event description.
-            
-            # Update event date
-            
-            # If the event is being updated, clear old tag list.
-            if not created:
-              event.tag_set.clear()
-            # Create new tag list.
-            tag_names = form.cleaned_data['tags'].split()
-            for tag_name in tag_names:
-                tag, dummy = Tag.objects.get_or_create(name=tag_name)
-                event.tag_set.add(tag)
-
-          
-            # Save event to database.
-            event.save()
-            return event
-
-
-def event_save_page(request):
     if request.method == 'POST':
-      form = EventSaveForm(request.POST)
+      form = EventForm(request.POST)
       if form.is_valid():
-          event = _event_save(request, form, graph)
-          return HttpResponseRedirect(
-                '/'
-          )
+        new_event = form.save()
+        me = graph.get('me')
+        fid = me['id']
+        fid = int(fid)
+        new_event.host = fid
+        new_event.save()
+        return HttpResponseRedirect('/')
+      else:
+      	print form.errors
+      	form = EventForm()
     else:
-      form = EventSaveForm()
+      form = EventForm()
       variables = RequestContext(request, {
-      	'form': form
-       })
-    return render_to_response('event_save.html', variables)
+      	'form': form})
+    return render_to_response('event_save.html',variables)
 
 
-def retrieve_events(request):
-	return
 
 
+
+
+
+
+
+
+
+########------SCRAPERS FOR EVENT --------############
 
 def canopy_club_events(request):
 	d = feedparser.parse('http://canopyclub.com/events/feed/')
@@ -232,23 +206,30 @@ def canopy_club_events(request):
 def illinois_union_events(request):
 
 	d = feedparser.parse('http://illinois.edu/calendar/rss/4061.xml')
-	location = "Illinois Union"
+	location = "Illini Union Courtyard Cafe"
 	#entries is list of all events from feed
 	for entry in d.entries:
 		title = entry['title']
 		description = entry['description']
 		link = entry['link']
 		date = entry['published']
+		date_list = entry['published_parsed']
 
-		#manipulation to get date and time
-		words = date.split()
-
-		date =  words[2] + " " + words[1] + ", " + words[3]
+		#manipulation to get date
+		date_list = list(date_list)
+		date_list = datetime(date_list[0],date_list[1],date_list[2])
+		date_list = date_list.strftime('%Y-%m-%d')
+		print date_list
 		
-		#retrieve and convert time from 24 hour to 12 hour clock
+		
+		#retrieve and convert time from 24 hour to 12 hour clock and get time
+		words = date.split()
 		time = words[4]
 		d = datetime.strptime(time, "%H:%M:%S")
 		time = d.strftime("%I:%M %p")
+		print time
+		
+		Event.objects.create(title=title, description=description, location=location, time=time, date=date_list, event_url = link)
 
 def lctc_film(request):
 
@@ -270,7 +251,7 @@ def lctc_film(request):
 		time = words[4]
 		d = datetime.strptime(time, "%H:%M:%S")
 		time = d.strftime("%I:%M %p")
-		
+
 
 
 def krannert_events(request):
@@ -313,7 +294,7 @@ def krannert_events(request):
 			#can be used for event photos
 			image_url = d['defaultimage']
 
-			Event.objects.create(title = title, description = description, location = location, date = event_date, time = time)
+			#Event.objects.create(title = title, description = description, location = location, date = event_date, time = time)
 
 
 

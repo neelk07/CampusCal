@@ -3,18 +3,18 @@ from django.db import models
 
 class Tag(models.Model):
     CATEGORY_CHOICES = (
-    ('M','Music'),
-    ('S', 'Sports'),
-    ('T', 'Tech'),
-    ('SO', 'Social'),
-    ('C', 'Cultural'),
-    ('A', 'Art'),
-    ('H', 'Health')   
+    ('Music','Music'),
+    ('Sports','Sports'),
+    ('Tech','Tech'),
+    ('Social','Social'),
+    ('Cultural','Cultural'),
+    ('Art','Art'),
+    ('Health', 'Health')   
     )
     category = models.CharField(max_length = 100, choices=CATEGORY_CHOICES, default="Social")
 
     def __unicode__(self):
-        return self.name
+        return self.category
 
 
 
@@ -27,8 +27,8 @@ class Event(models.Model):
     location = models.CharField(max_length=300)
     date = models.DateField()
     time = models.CharField(max_length = 100)
-    host = models.IntegerField()
-
+    
+    host = models.IntegerField(blank=True,null=True)
     price = models.CharField(max_length = 100, blank=True)
     male = models.IntegerField(default='0')
     female = models.IntegerField(default='0')
@@ -42,6 +42,8 @@ class Event(models.Model):
         return self.title
 
 
+
+
 class UserPref(models.Model):
     f_id = models.IntegerField()
     primary = models.CharField(max_length= 100)
@@ -49,6 +51,7 @@ class UserPref(models.Model):
 
     def __unicode__(self): 
         return unicode(self.f_id)
+
 
 
 class Going(models.Model):
