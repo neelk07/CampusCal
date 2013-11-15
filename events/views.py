@@ -1,10 +1,8 @@
 import urllib2
 import json
 import feedparser
-from time import strptime
-from time import mktime
-from datetime import datetime
-from django.contrib.auth.models import User
+from time import strptime, mktime
+from datetime import datetime, timedelta
 from django.shortcuts import render_to_response
 from events.forms import *
 from events.models import *
@@ -12,7 +10,6 @@ from django.http import HttpResponse, Http404, HttpResponseRedirect
 from django.template import Context, RequestContext
 from django.template.loader import get_template
 from django.shortcuts import render_to_response, get_object_or_404
-from datetime import datetime, timedelta
 from django.db.models import Q
 from django.core.paginator import Paginator, InvalidPage
 from django_facebook import exceptions as facebook_exceptions, \
@@ -23,6 +20,8 @@ from django_facebook.utils import next_redirect, get_registration_backend, \
     to_bool, error_next_redirect, get_instance_for
 from open_facebook import exceptions as open_facebook_exceptions
 from open_facebook.utils import send_warning
+
+#For Paginator
 ITEMS_PER_PAGE = 10
 
 
@@ -50,9 +49,13 @@ def recent_events_page(request, graph):
  		event_ids.append(event.event_id)
 
  	print event_ids
-	
-	#exclude events that created by you
-	recent_events = Event.objects.order_by('-created').exclude(host = fid)
+
+ 	#retrievel date is today - 1 so that it will retrieve events from today also (some weird error)
+	retrieve_date = datetime.now()
+	retrieve_date = retrieve_date.replace(day = retrieve_date.day-1)
+
+	#exclude events that are created by you
+	recent_events = Event.objects.filter(date__gt=retrieve_date).order_by('-created').exclude(host = fid)
 
 	#exclude events you are already going to
 	recent_events = recent_events.exclude( id__in = event_ids)
@@ -86,9 +89,11 @@ def profile_page(request,graph):
 
 
 	if pref == 0:
-		#algorithm for suggestions
+		
+
+################-------EVENT SUGGESTION ALGORITHM FROM FACEBOOK PROFILE------------#################
+		
 		me = graph.get('me')
-		print me
 		friends = graph.get('me/friends')
 		music = graph.get('me/music')
 		movies = graph.get('me/movies')
@@ -122,23 +127,12 @@ def profile_page(request,graph):
 		social_count = len(friends['data'])/20
 		
 		art_count = 2*tv_count + movie_count
-		
-		#debugging
-		#print "Sports"
-		#print sports
-		#print "Music" 
-		#print  music_count
-		#print "Art"
-		#print art_count
-		#print "Cultural"
-		#print lang_count
-		#print "Social"
-		#print social_count
 
 		#retrieve primary and secondary prefs
 		prefs = ["Sports", "Music", "Art", "Cultural", "Social"]
 		prefs_num = [sports, music_count, art_count, lang_count, social_count]
 
+		#now we calculate the first pref, remove it from list, and then calculate second pref
 		primary = prefs_num.index(max(prefs_num))
 		pref1 = prefs[primary]
 
@@ -151,35 +145,13 @@ def profile_page(request,graph):
 		UserPref.objects.create(f_id = fid, primary = pref1, secondary = pref2)		
 			
 	else:
-		name = "neel"
-		
-	#me = graph.get('me/television')
-	#music = graph.get('me/music')
-	#artists = music['data']
-	#movies = graph.get('me/movies')
-	#data = me['data']
-	#print len(data)
-	#print data
+		name = "Error With Facebook User Pref Algo"
 	
-	
-	#id = me['id']
-	#friends = graph.get('me/friends')
-	#data = friends['data']
-	#for d in data:
-	#	print d['name']
-	#friends = graph.get('me/friends')
-	#feed = graph.get('me/feed')
-	#name = graph.get('me')['name']
-	#print name
-
-	#for n in name:
-	#	print n['name']
-
-	#recent_events = Event.objects.raw('SELECT "events_event"."id", "events_event"."created", "events_event"."title", "events_event"."description", "events_event"."location", "events_event"."host", "events_event"."date", "events_event"."male", "events_event"."female", "events_event"."facebook_link" FROM "events_event" ORDER BY "events_event"."created" DESC LIMIT 10')
 	variables = RequestContext(request, {
       	'my_events': my_events,
       	'fid': fid})
 	return render_to_response('profile.html', variables)
+
 
 
 @facebook_required_lazy
@@ -204,6 +176,7 @@ def event_save_page(request,graph):
       	'form': form})
     return render_to_response('event_save.html',variables)
 
+
 @facebook_required_lazy
 def update_event(request,id,graph):
 
@@ -227,6 +200,7 @@ def update_event(request,id,graph):
 	return render_to_response('event_save.html', variables)
     
 
+
 @facebook_required_lazy
 def delete_event(request,id,graph):
 	#check to make sure that you can't delete someone else's event
@@ -240,6 +214,7 @@ def delete_event(request,id,graph):
 
 	event.delete()
 	return HttpResponseRedirect('/profile/')
+
 
 
 @facebook_required_lazy
@@ -261,14 +236,12 @@ def going_to_event(request,id,graph):
 	#let's add it to database
 	else:
 		Going.objects.create(f_id = fid, event_id = id)
-		return HttpResponseRedirect('/profile/')
+		return HttpResponseRedirect('/recent/')
 
 
 
 
-
-
-########------SCRAPERS FOR EVENT --------############
+#####################------SCRAPERS FOR EVENT --------######################
 
 def canopy_club_events(request):
 	d = feedparser.parse('http://canopyclub.com/events/feed/')
@@ -378,8 +351,6 @@ def krannert_events(request):
 			image_url = d['defaultimage']
 
 			#Event.objects.create(title = title, description = description, location = location, date = event_date, time = time)
-
-
 
 	context = RequestContext(request)
 	return render_to_response('landing.html', context)
