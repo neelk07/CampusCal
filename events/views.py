@@ -32,9 +32,32 @@ def landing_page(request):
 	return render_to_response('landing.html', context)
 
 
+@facebook_required_lazy
+def recent_events_page(request, graph):
 
-def recent_events_page(request):
-	recent_events = Event.objects.raw('SELECT "events_event"."id", "events_event"."created", "events_event"."title", "events_event"."description", "events_event"."location", "events_event"."host", "events_event"."date", "events_event"."male", "events_event"."female" FROM "events_event" ORDER BY "events_event"."created" DESC LIMIT 10')
+	me = graph.get('me')
+ 	fid = me['id']
+ 	fid = int(fid)
+
+	#get events you are going to 
+ 	going_events = Going.objects.filter(f_id = fid)
+
+ 	#create list which will be populated with event ids
+ 	event_ids = []
+ 	
+ 	#add them to queryset of events you created
+ 	for event in going_events:
+ 		event_ids.append(event.event_id)
+
+ 	print event_ids
+	
+	#exclude events that created by you
+	recent_events = Event.objects.order_by('-created').exclude(host = fid)
+
+	#exclude events you are already going to
+	recent_events = recent_events.exclude( id__in = event_ids)
+
+
 	variables = RequestContext(request, {
       	'recent_events': recent_events})
 	return render_to_response('recent_events.html', variables)	
@@ -43,13 +66,19 @@ def recent_events_page(request):
 @facebook_required_lazy
 def profile_page(request,graph):
 
-	
 	me = graph.get('me')
  	fid = me['id']
  	fid = int(fid)
 
  	#retrieve events create by you
  	my_events = Event.objects.filter(host = fid)
+
+ 	#get events you are going to 
+ 	going_events = Going.objects.filter(f_id = fid)
+ 	
+ 	#add them to queryset of events you created
+ 	for event in going_events:
+ 		my_events =  my_events | Event.objects.filter(id=event.event_id)
 
  	#check if preferences for this user is saved
 	pref = UserPref.objects.filter(f_id= fid).count()
@@ -148,7 +177,8 @@ def profile_page(request,graph):
 
 	#recent_events = Event.objects.raw('SELECT "events_event"."id", "events_event"."created", "events_event"."title", "events_event"."description", "events_event"."location", "events_event"."host", "events_event"."date", "events_event"."male", "events_event"."female", "events_event"."facebook_link" FROM "events_event" ORDER BY "events_event"."created" DESC LIMIT 10')
 	variables = RequestContext(request, {
-      	'my_events': my_events})
+      	'my_events': my_events,
+      	'fid': fid})
 	return render_to_response('profile.html', variables)
 
 
@@ -164,7 +194,7 @@ def event_save_page(request,graph):
         fid = int(fid)
         new_event.host = fid
         new_event.save()
-        return HttpResponseRedirect('/')
+        return HttpResponseRedirect('/profile/')
       else:
       	print form.errors
       	form = EventForm()
@@ -174,9 +204,18 @@ def event_save_page(request,graph):
       	'form': form})
     return render_to_response('event_save.html',variables)
 
+@facebook_required_lazy
+def update_event(request,id,graph):
 
-def update_event(request,id):
+	#check to make sure that you can't edit someone else's event
+	me = graph.get('me')
+ 	fid = me['id']
+ 	fid = int(fid)
 	event = Event.objects.get(id=id)
+	if event.host != fid:
+		return HttpResponseRedirect('/profile/')
+
+	#otherwise let them update the event	
 	form= EventForm(request.POST or None, instance=event)
 	if request.method == 'POST':
 		if form.is_valid():
@@ -188,8 +227,41 @@ def update_event(request,id):
 	return render_to_response('event_save.html', variables)
     
 
+@facebook_required_lazy
+def delete_event(request,id,graph):
+	#check to make sure that you can't delete someone else's event
+	me = graph.get('me')
+ 	fid = me['id']
+ 	fid = int(fid)
+	event = Event.objects.get(id=id)
+
+	if event.host != fid:
+		return HttpResponseRedirect('/profile/')
+
+	event.delete()
+	return HttpResponseRedirect('/profile/')
 
 
+@facebook_required_lazy
+def going_to_event(request,id,graph):
+
+	me = graph.get('me')
+ 	fid = me['id']
+ 	fid = int(fid)
+
+	#check if user is already going to event
+	going = Going.objects.filter(f_id= fid, event_id = id)
+	going_check = going.count()
+
+	#if person is already going we change to not going by deleting the going entry in database
+	if going_check == 1:
+		going.delete()
+		return HttpResponseRedirect('/profile/')
+
+	#let's add it to database
+	else:
+		Going.objects.create(f_id = fid, event_id = id)
+		return HttpResponseRedirect('/profile/')
 
 
 

@@ -13,7 +13,24 @@
 
             <div class="pure-u-2-3">
                 <div class="l-box splash-text">
-                    <p>
+                    <h2>My Events</h2>
+                    <a href='/recent/'>Most Recent Events</a>
+                    <br>
+                    <a href='/save/'>Add An Event</a>
+                    <table class="pure-table pure-table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Title</th>
+                                <th>Description</th>
+                                <th>Location</th>
+                                <th>Date</th>
+                                <th>Time</th>
+                                <th></th>
+                                <th></th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
                         <!-- for loop for events -->
                             {% for my_event in my_events %}
 
@@ -22,11 +39,19 @@
                                 <td>{{my_event.description}}</td>
                                 <td>{{my_event.location}}</td>
                                 <td>{{my_event.date}}</td>
-                                <a href='/event/update/{{my_event.id}}/'>Update</a>
+                                <td>{{my_event.time}}</td>
+                                {% if fid == my_event.host %}
+                                    <td><a href='/event/update/{{my_event.id}}/'>Update</a></td>
+                                    <td><a href='/event/delete/{{my_event.id}}/'>Delete</a></td>
+                                {% else %}
+                                    <td><a href='/event/going/{{my_event.id}}/'>Not Going</a></td>
+                                    <td></td>
+                                {% endif %}
                             </tr>
 
                             {% endfor %}
-                    </p>
+                      </tbody>
+                    </table>
                 </div>
             </div>
         </div>

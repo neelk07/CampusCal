@@ -17,6 +17,7 @@
                                 <th>Description</th>
                                 <th>Location</th>
                                 <th>Date</th>
+                                <th></th>
                             </tr>
                         </thead>
 
@@ -30,6 +31,7 @@
                                 <td>{{recent_event.description}}</td>
                                 <td>{{recent_event.location}}</td>
                                 <td>{{recent_event.date}}</td>
+                                <td><a href='/event/going/{{recent_event.id}}/'>Going</a></td>
                             </tr>
 
                             {% endfor %}

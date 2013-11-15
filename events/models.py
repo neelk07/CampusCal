@@ -59,7 +59,7 @@ class Going(models.Model):
     event_id = models.IntegerField()
 
     def __unicode__(self):
-        return self.event_id
+        return unicode(self.event_id)
 
 
 
