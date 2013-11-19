@@ -83,6 +83,13 @@ def profile_page(request,graph):
  	for event in going_events:
  		my_events =  my_events | Event.objects.filter(id=event.event_id)
 
+ 	#retrievel date is today - 1 so that it will retrieve events from today also (some weird error)
+	retrieve_date = datetime.now()
+	retrieve_date = retrieve_date.replace(day = retrieve_date.day-1)
+
+ 	#only show events that have not happened yet
+ 	my_events = my_events.filter(date__gt = retrieve_date)
+
  	#check if preferences for this user is saved
 	pref = UserPref.objects.filter(f_id= fid).count()
 	pref_ob = UserPref.objects.filter(f_id= fid)
@@ -174,7 +181,7 @@ def event_save_page(request,graph):
       form = EventForm()
       variables = RequestContext(request, {
       	'form': form})
-    return render_to_response('event_save.html',variables)
+    return render_to_response('event_save.html', variables)
 
 
 @facebook_required_lazy
@@ -240,6 +247,27 @@ def going_to_event(request,id,graph):
 
 
 
+def search_events(request):
+	form = SearchForm()
+	events = []
+	show_results = False
+	if 'query' in request.GET:
+		show_results = True
+		query = request.GET['query'].strip()
+		if query:
+			keywords = query.split()
+			q = Q()
+			for keyword in keywords:
+				q = q & Q(title__icontains = keyword)
+			form = SearchForm({'query':query})
+			events = Event.objects.filter(q)[:10]
+	variables = RequestContext(request,{
+		'form':form,
+		'events': events,
+		'show_results': show_results
+		})
+	return render_to_response('search.html', variables)
+
 
 #####################------SCRAPERS FOR EVENT --------######################
 
@@ -250,10 +278,17 @@ def canopy_club_events(request):
 
 	#entries is list of all events from feed
 	for entry in d.entries:
+	
 		title = entry['title']
-		print title
 		description = entry['description']
 		link = entry['link']
+
+		date = entry['ev_startdate']
+		print title
+		print description
+		print link
+		print date
+		break
 
 	#url1 ='http://acm.uiuc.edu/calendar/feed.ics'
 	#cal = urllib2.urlopen(url1).read()
@@ -285,7 +320,12 @@ def illinois_union_events(request):
 		time = d.strftime("%I:%M %p")
 		print time
 		
-		Event.objects.create(title=title, description=description, location=location, time=time, date=date_list, event_url = link)
+		#check for duplicate entry
+		repeat_event = Event.objects.filter(title = title, date = date_list, time = time).count()
+
+		#no similar event was found so add it to the db
+		if repeat_event == 0:
+			Event.objects.create(title=title, description=description, location=location, time=time, date=date_list, event_url = link)
 
 def lctc_film(request):
 
@@ -297,16 +337,25 @@ def lctc_film(request):
 		description = entry['description']
 		link = entry['link']
 		date = entry['published']
+		date_list = entry['published_parsed']
 
-		#manipulation to get date and time
+		#manipulation to get date
+		date_list = list(date_list)
+		date_list = datetime(date_list[0],date_list[1],date_list[2])
+		date_list = date_list.strftime('%Y-%m-%d')
+			
+		#retrieve and convert time from 24 hour to 12 hour clock and get time
 		words = date.split()
-
-		date =  words[2] + " " + words[1] + ", " + words[3]
-		
-		#retrieve and convert time from 24 hour to 12 hour clock
 		time = words[4]
 		d = datetime.strptime(time, "%H:%M:%S")
 		time = d.strftime("%I:%M %p")
+
+		#check for duplicate entry
+		repeat_event = Event.objects.filter(title = title, date = date_list, time = time).count()
+
+		#no similar event was found so add it to the db
+		if repeat_event == 0:
+			Event.objects.create(title=title, description=description, location=location, time=time, date=date_list, event_url = link)
 
 
 
@@ -339,18 +388,21 @@ def krannert_events(request):
 			time = d['Time']
 			link = d['EventUrl']
 
-			date = event_date.split();
-			print date
+			date_list = event_date.split();
+			date = datetime.strptime(date_list[1]+','+date_list[2]+date_list[3],"%B,%d,%Y")
 
-			print strptime(date[1],'%b').tm_mon
-
-
-
+			date = date.strftime('%Y-%m-%d')
 
 			#can be used for event photos
 			image_url = d['defaultimage']
+			
+			#check for duplicate entry
+			repeat_event = Event.objects.filter(title = title, date = date, time = time).count()
 
-			#Event.objects.create(title = title, description = description, location = location, date = event_date, time = time)
+			#no similar event was found so add it to the db
+			if repeat_event == 0:
+				Event.objects.create(title=title, description=description, location=location, time=time, date=date, price = price, event_url = link, image_url = image_url)
+
 
 	context = RequestContext(request)
 	return render_to_response('landing.html', context)
