@@ -1,10 +1,92 @@
-<div class="well" id="eventsave">
+{% extends "base.html" %}
 
-        <div class="span4" id="saveform">
-                <form method="post" action=".">
-                    {% csrf_token %}
-                           {{ form.as_p }}
-                    <input type="submit" value="save" />
-                </form>
+{% block content %}
+
+<div class="pure-skin-mine">
+    <div class="splash">
+        <div class="pure-g-r">
+
+        	<div class="pure-u-1-5">
+        	</div>
+            
+
+            <div class="pure-u-3-5">
+                <div class="l-box">
+					  
+					  <form class="pure-form pure-form-aligned" method="POST" action".">
+					  {% csrf_token %}
+					    <fieldset>
+
+					        <div class="pure-control-group">
+					            {{ form.title.errors }}
+					            <label>Title</label>
+					            {{ form.title }}
+					        </div>
+
+					        <div class="pure-control-group">
+					            {{ form.description.errors }}
+					            <label>Description</label>
+					            {{ form.description }}
+					        </div>
+
+					        <div class="pure-control-group">
+					            {{ form.date.errors }}
+					            <label>Date</label>
+					            {{ form.date}}
+					        </div>
+
+					        <div class="pure-control-group">
+					            {{ form.time.errors }}
+					            <label>Time</label>
+					            {{ form.time }}
+					        </div>
+
+					         <div class="pure-control-group">
+					            {{ form.location.errors }}
+					            <label>Location</label>
+					            {{ form.location }}
+					        </div>
+
+					         <div class="pure-control-group">
+					            {{ form.price.errors }}
+					            <label>Price</label>
+					            {{ form.price }}
+					        </div>
+
+					         <div class="pure-control-group">
+					            {{ form.event_url.errors }}
+					            <label>URL for Event</label>
+					            {{ form.event_url }}
+					        </div>
+
+					         <div class="pure-control-group">
+					            {{ form.image_url.errors }}
+					            <label>URL for Image</label>
+					            {{ form.image_url }}
+					        </div>
+
+					         <div class="pure-control-group">
+					            {{ form.tag.errors }}
+					            <label>Tag</label>
+					            {{ form.tag}}
+					        </div>
+
+					       
+
+					            <input type="submit" value="Save" class="pure-button pure-button-primary"/>
+					        
+					    </fieldset>
+					  </form>
+
+                </div>
+            </div>
+
+            <div class="pure-u-1-5">
+        	</div>
+
+
         </div>
-  </div>
+    </div>
+</div>
+
+{% endblock %}

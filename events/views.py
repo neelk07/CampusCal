@@ -74,10 +74,12 @@ def profile_page(request,graph):
  	fid = int(fid)
 
  	#retrieve events create by you
- 	my_events = Event.objects.filter(host = fid)
+ 	created_events = Event.objects.filter(host = fid)
 
  	#get events you are going to 
  	going_events = Going.objects.filter(f_id = fid)
+
+ 	my_events = Event.objects.none()
  	
  	#add them to queryset of events you created
  	for event in going_events:
@@ -89,6 +91,7 @@ def profile_page(request,graph):
 
  	#only show events that have not happened yet
  	my_events = my_events.filter(date__gt = retrieve_date)
+ 	created_events = created_events.filter(date__gt = retrieve_date)
 
  	#check if preferences for this user is saved
 	pref = UserPref.objects.filter(f_id= fid).count()
@@ -155,6 +158,7 @@ def profile_page(request,graph):
 		name = "Error With Facebook User Pref Algo"
 	
 	variables = RequestContext(request, {
+		'created_events' : created_events,
       	'my_events': my_events,
       	'fid': fid})
 	return render_to_response('profile.html', variables)
@@ -163,7 +167,6 @@ def profile_page(request,graph):
 
 @facebook_required_lazy
 def event_save_page(request,graph):
-
     if request.method == 'POST':
       form = EventForm(request.POST)
       if form.is_valid():
@@ -175,12 +178,12 @@ def event_save_page(request,graph):
         new_event.save()
         return HttpResponseRedirect('/profile/')
       else:
-      	print form.errors
       	form = EventForm()
     else:
       form = EventForm()
-      variables = RequestContext(request, {
-      	'form': form})
+      
+    variables = RequestContext(request, {
+      		'form': form})
     return render_to_response('event_save.html', variables)
 
 
@@ -200,7 +203,7 @@ def update_event(request,id,graph):
 	if request.method == 'POST':
 		if form.is_valid():
 			form.save()
-			return HttpResponseRedirect('/')
+			return HttpResponseRedirect('/profile/')
 	variables = RequestContext(request, {
 		'form': form
 		})

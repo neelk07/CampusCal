@@ -11,6 +11,8 @@
 
  <!-- Stylesheets and Scripts -->
     <link rel="stylesheet" href="http://yui.yahooapis.com/pure/0.3.0/pure-min.css">
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css" rel="stylesheet">
+    <script src="//netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="{% static "css/custom.css" %}">
     <script src="http://use.typekit.net/gis6vng.js"></script>
     <script>
@@ -30,10 +32,11 @@
 
             <ul>
                 <li><a href="#">Discover</a></li>
-                <li><a href="#">Events</a></li>
+                <li><a href="/recent/">Recent Events</a></li>
                 <li><a href="#">About</a></li>
                 <li><a href="#">Blog</a></li>
                 {% if user.is_authenticated %}
+                 <li><a href="/profile/">Profile</a></li>
                 <li><a href="{% url 'auth_logout' %}?next={{ request.path|urlencode }}" class="pure-button primary-button">Log Out</a><li>
                 {% endif %}
             </ul>

@@ -25,8 +25,8 @@ class EventForm(ModelForm):
 
 class SearchForm(forms.Form):
       query = forms.CharField(
-        label=u'Search For An Event',
-        widget=forms.TextInput(attrs={'size': 32})
+        label=u'Event Keyword  ',
+        widget=forms.TextInput(attrs={'size': 2})
         )
 
             
