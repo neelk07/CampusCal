@@ -1,6 +1,7 @@
 import urllib2
 import json
 import feedparser
+import itertools
 from time import strptime, mktime
 from datetime import datetime, timedelta
 from django.shortcuts import render_to_response
@@ -95,7 +96,7 @@ def profile_page(request,graph):
 
  	#check if preferences for this user is saved
 	pref = UserPref.objects.filter(f_id= fid).count()
-	pref_ob = UserPref.objects.filter(f_id= fid)
+	pref_ob = UserPref.objects.get(f_id= fid)
 
 
 	if pref == 0:
@@ -155,9 +156,26 @@ def profile_page(request,graph):
 		UserPref.objects.create(f_id = fid, primary = pref1, secondary = pref2)		
 			
 	else:
-		name = "Error With Facebook User Pref Algo"
+		#we already have the pref object and now let's find the primary and secondary interest
+		
+		pref1 = pref_ob.primary
+		pref2 = pref_ob.secondary
+
+	print type(pref1)
+	print type(pref2)
+
+	pref1 = (str)(pref1)
+	pref2 = (str)(pref2)
+
+	print type(pref1)
+	print type(pref2)
+
+	suggest_events_primary = Event.objects.filter(Q(tag__category__icontains = pref1))[:2]
+	suggest_events_secondary = Event.objects.filter(Q(tag__category__icontains = pref2))[:2]
+	suggest_events = itertools.chain(suggest_events_primary,suggest_events_secondary)
 	
 	variables = RequestContext(request, {
+		'suggest_events' : suggest_events,
 		'created_events' : created_events,
       	'my_events': my_events,
       	'fid': fid})
