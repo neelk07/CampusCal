@@ -25,6 +25,8 @@ class Event(models.Model):
     title = models.CharField(max_length=200)
     description = models.TextField()
     location = models.CharField(max_length=300)
+    lat = models.FloatField(default = '0.00')
+    lng = models.FloatField(default = '0.00')
     date = models.DateField()
     time = models.CharField(max_length = 100)
     

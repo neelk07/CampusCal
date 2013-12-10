@@ -354,21 +354,7 @@ def map_view(request,graph):
 	retrieve_date = retrieve_date.replace(day = retrieve_date.day-1)
 
 	#exclude events that are created by you
-	recent_events = Event.objects.filter(date__gt=retrieve_date).order_by('-created').exclude(host = fid)
-
-	for event in recent_events:		
-		location = event.location
-		location = (str)(location)
-		location = location.replace (" ", "+")
-		url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+location+',+IL&sensor=true'
-		serialized_data = urllib2.urlopen(url).read()
-		data = json.loads(serialized_data)
-		data = data['results']
-		lat =  data[0]['geometry']['location']['lat']
-		lng = data[0]['geometry']['location']['lng']
-	
-
-
+	recent_events = Event.objects.filter(date__gt=retrieve_date).order_by('-created').exclude(host = fid)[:5]
 	variables = RequestContext(request,{
 		'recent_events':recent_events,
 		
@@ -384,6 +370,13 @@ def canopy_club_events(request):
 	d = feedparser.parse('http://canopyclub.com/events/feed/')
 
 	location = "The Canopy Club"
+	loc = location.replace (" ", "+")
+	url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+IL&sensor=true'
+	serialized_data = urllib2.urlopen(url).read()
+	data = json.loads(serialized_data)
+	data = data['results']
+	lat =  data[0]['geometry']['location']['lat']
+	lng = data[0]['geometry']['location']['lng']
 
 	#entries is list of all events from feed
 	for entry in d.entries:
@@ -397,6 +390,8 @@ def canopy_club_events(request):
 		print description
 		print link
 		print date
+		print lng 
+		print lat
 		break
 
 	#url1 ='http://acm.uiuc.edu/calendar/feed.ics'
@@ -406,7 +401,15 @@ def canopy_club_events(request):
 def illinois_union_events(request):
 
 	d = feedparser.parse('http://illinois.edu/calendar/rss/4061.xml')
-	location = "Illini Union Courtyard Cafe"
+	location = "Illini Union"
+	loc = location.replace (" ", "+")
+	url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+IL&sensor=true'
+	serialized_data = urllib2.urlopen(url).read()
+	data = json.loads(serialized_data)
+	data = data['results']
+	lat =  data[0]['geometry']['location']['lat']
+	lng = data[0]['geometry']['location']['lng']
+
 	#entries is list of all events from feed
 	for entry in d.entries:
 		title = entry['title']
@@ -434,12 +437,21 @@ def illinois_union_events(request):
 
 		#no similar event was found so add it to the db
 		if repeat_event == 0:
-			Event.objects.create(title=title, description=description, location=location, time=time, date=date_list, event_url = link)
+			event = Event.objects.create(title=title, description=description, location=location, lat= lat, lng = lng, time=time, date=date_list, event_url = link)
+			tagged = Tag.objects.get(category = 'Social')
+			event.tag.add(tagged)
 
 def lctc_film(request):
 
 	d = feedparser.parse('http://illinois.edu/calendar/rss/4761.xml')
 	location = "Foreign Language Building 1080"
+	loc = location.replace (" ", "+")
+	url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+IL&sensor=true'
+	serialized_data = urllib2.urlopen(url).read()
+	data = json.loads(serialized_data)
+	data = data['results']
+	lat =  data[0]['geometry']['location']['lat']
+	lng = data[0]['geometry']['location']['lng']
 	#entries is list of all events from feed
 	for entry in d.entries:
 		title = entry['title']
@@ -464,11 +476,16 @@ def lctc_film(request):
 
 		#no similar event was found so add it to the db
 		if repeat_event == 0:
-			Event.objects.create(title=title, description=description, location=location, time=time, date=date_list, event_url = link)
-
+			event = Event.objects.create(title=title, description=description, location=location,lat = lat, lng = lng, time=time, date=date_list, event_url = link)
+			tagged = Tag.objects.get(category='Cultural')
+			event.tag.add(tagged)
+			
 
 
 def krannert_events(request):
+
+
+	location = "Krannert Center For Performing Arts"
 
 	url = 'http://www.krannertcenter.com/handlers/calendarjson.ashx'
 	serialized_data = urllib2.urlopen(url).read()
@@ -481,7 +498,6 @@ def krannert_events(request):
 
 		#prints the day
 		event_date = date
-
 		#iterates over every item in day	
 		for d in data[date]:
 
@@ -494,6 +510,16 @@ def krannert_events(request):
 			price = d['Price']
 			description = d['Description']
 			location = d['Location']
+			if len(location) < 10:
+				location = "Krannert Center For Performing Arts" + " - " + location
+			loc = location.replace (" ", "+")
+			url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+IL&sensor=true'
+			serialized_data = urllib2.urlopen(url).read()
+			dt = json.loads(serialized_data)
+			if dt['status'] == 'OK':	
+				dt = dt['results']
+				lat =  dt[0]['geometry']['location']['lat']
+				lng = dt[0]['geometry']['location']['lng']
 			time = d['Time']
 			link = d['EventUrl']
 
@@ -510,8 +536,9 @@ def krannert_events(request):
 
 			#no similar event was found so add it to the db
 			if repeat_event == 0:
-				Event.objects.create(title=title, description=description, location=location, time=time, date=date, price = price, event_url = link, image_url = image_url, tag="Music")
-
+				event = Event.objects.create(title=title, description=description, location=location, lat = lat, lng = lng, time=time, date=date, price = price, event_url = link, image_url = image_url)
+				tagged = Tag.objects.get(category='Music')
+				event.tag.add(tagged)
 
 	context = RequestContext(request)
 	return render_to_response('landing.html', context)
