@@ -96,8 +96,6 @@ def profile_page(request,graph):
 
  	#check if preferences for this user is saved
 	pref = UserPref.objects.filter(f_id= fid).count()
-	pref_ob = UserPref.objects.get(f_id= fid)
-
 
 	if pref == 0:
 		
@@ -157,28 +155,25 @@ def profile_page(request,graph):
 			
 	else:
 		#we already have the pref object and now let's find the primary and secondary interest
-		
+		pref_ob = UserPref.objects.get(f_id= fid)
 		pref1 = pref_ob.primary
 		pref2 = pref_ob.secondary
 
-	print type(pref1)
-	print type(pref2)
-
 	pref1 = (str)(pref1)
 	pref2 = (str)(pref2)
-
-	print type(pref1)
-	print type(pref2)
 
 	suggest_events_primary = Event.objects.filter(Q(tag__category__icontains = pref1))[:2]
 	suggest_events_secondary = Event.objects.filter(Q(tag__category__icontains = pref2))[:2]
 	suggest_events = itertools.chain(suggest_events_primary,suggest_events_secondary)
 	
 	variables = RequestContext(request, {
+		'pref1': pref1,
+		'pref2': pref2,
 		'suggest_events' : suggest_events,
 		'created_events' : created_events,
       	'my_events': my_events,
       	'fid': fid})
+
 	return render_to_response('profile.html', variables)
 
 
@@ -267,27 +262,120 @@ def going_to_event(request,id,graph):
 		return HttpResponseRedirect('/recent/')
 
 
-
+@facebook_required_lazy
 def search_events(request):
 	form = SearchForm()
-	events = []
+	events = Event.objects.all()
+	tags = []
+	query = None
+	location = None
+	date = None
+	d = None
+	tag = None
+	price = None
+	display_date = None
+
 	show_results = False
-	if 'query' in request.GET:
+	
+	if 'title' in request.GET:
 		show_results = True
-		query = request.GET['query'].strip()
+		query = request.GET['title'].strip()
 		if query:
 			keywords = query.split()
 			q = Q()
 			for keyword in keywords:
 				q = q & Q(title__icontains = keyword)
-			form = SearchForm({'query':query})
-			events = Event.objects.filter(q)[:10]
+			form = SearchForm()
+			events = Event.objects.filter(q)
+
+	if 'location' in request.GET:
+		location = request.GET['location']
+		if location:
+			events = events.filter(location__icontains = location)
+
+	
+	if 'date' in request.GET:
+		date = request.GET['date']
+		d = date
+		if len(date) == 0:
+			pass
+		else:
+			date = datetime.strptime(date, '%m/%d/%Y').strftime('%Y-%m-%d')
+			events = events.filter(date = date)
+
+	if 'price' in request.GET:
+		price = request.GET['price']
+		if price:
+			events = events.filter(price__lte = price)
+		else:
+			pass
+	
+	if 'tag' in request.GET:
+		tag = request.GET['tag']
+		if tag:
+			events = events.filter(tag = tag)
+		else:
+			pass
+
+	#implement algo for turning tag numbers into strings
+
+
 	variables = RequestContext(request,{
+		'query': query,
+		'date':d,
+		'price':price,
+		'tag':tag,
 		'form':form,
 		'events': events,
 		'show_results': show_results
 		})
+
 	return render_to_response('search.html', variables)
+
+@facebook_required_lazy
+def map_view(request,graph):
+
+	me = graph.get('me')
+ 	fid = me['id']
+ 	fid = int(fid)
+
+	#get events you are going to 
+ 	going_events = Going.objects.filter(f_id = fid)
+
+ 	#create list which will be populated with event ids
+ 	event_ids = []
+ 	
+ 	#add them to queryset of events you created
+ 	for event in going_events:
+ 		event_ids.append(event.event_id)
+
+ 	#retrievel date is today - 1 so that it will retrieve events from today also (some weird error)
+	retrieve_date = datetime.now()
+	retrieve_date = retrieve_date.replace(day = retrieve_date.day-1)
+
+	#exclude events that are created by you
+	recent_events = Event.objects.filter(date__gt=retrieve_date).order_by('-created').exclude(host = fid)
+
+	for event in recent_events:		
+		location = event.location
+		location = (str)(location)
+		location = location.replace (" ", "+")
+		url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+location+',+IL&sensor=true'
+		serialized_data = urllib2.urlopen(url).read()
+		data = json.loads(serialized_data)
+		data = data['results']
+		lat =  data[0]['geometry']['location']['lat']
+		lng = data[0]['geometry']['location']['lng']
+	
+
+
+	variables = RequestContext(request,{
+		'recent_events':recent_events,
+		
+		})
+
+	return render_to_response('map_view.html', variables)
+
 
 
 #####################------SCRAPERS FOR EVENT --------######################
@@ -422,7 +510,7 @@ def krannert_events(request):
 
 			#no similar event was found so add it to the db
 			if repeat_event == 0:
-				Event.objects.create(title=title, description=description, location=location, time=time, date=date, price = price, event_url = link, image_url = image_url)
+				Event.objects.create(title=title, description=description, location=location, time=time, date=date, price = price, event_url = link, image_url = image_url, tag="Music")
 
 
 	context = RequestContext(request)

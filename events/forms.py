@@ -23,10 +23,11 @@ class EventForm(ModelForm):
       #            raise forms.ValidationError('Please Provide A Date in the Future!')
 
 
-class SearchForm(forms.Form):
-      query = forms.CharField(
-        label=u'Event Keyword  ',
-        widget=forms.TextInput(attrs={'size': 2})
-        )
+class SearchForm(ModelForm):
+      class Meta:
+            model = Event
+            fields = ['title', 'date', 'location', 'price', 'tag']
+
+
 
             

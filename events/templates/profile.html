@@ -5,9 +5,8 @@
         <div class="pure-g-r">
             <div class="pure-u-1-4">
                 <h3>{{user.first_name }} {{user.last_name}}</h3>
-                <a href='/recent/'>Most Recent Events</a>
+                <h4>Prefers: {{pref1}} and {{pref2}}</h4>
                     <br>
-                    <a href='/save/'>Add An Event</a>
                 <div class="l-box splash-image">
                     <img src="http://graph.facebook.com/{{ user.profile_or_self.facebook_id }}/picture?type=large"
                          alt="Placeholder image for example." class="img-circle prof_pic">
@@ -37,7 +36,7 @@
             <div class="pure-u-1-4">
                 <div class="l-box splash-text">
                     <h2>Events I'm Going To</h2>
-                    
+                    <a href='/recent/'>Most Recent Events</a>
                        {% for my_event in my_events %}
 
                         <div class="well">
@@ -65,6 +64,7 @@
                 <div class="pure-u-1-4">
                 <div class="l-box splash-text">
                     <h2>My Events</h2>
+                    <a href='/save/'>Add An Event</a>
                     
                        {% for created_event in created_events %}
 

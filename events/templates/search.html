@@ -7,18 +7,84 @@
         <div class="pure-g-r">
             
 
-            <div class="pure-u-4-5">
+            <div class="pure-u-2-5">
                 <div class="l-box">
 
-                  <form class="pure-form" method="get" action="." >
-                      <fieldset>
-                          <legend>Event Keyword:</legend>
-                            {{ form.query}}
-                            <input type="submit" class="pure-button pure-button-primary" value="Search" />
-                      </fieldset>
+                 <form class="pure-form pure-form-aligned" method="GET" action".">
+                  {% csrf_token %}
+                    <fieldset>
+                      <h4>Search By Any Combination of These Fields</h4>
+
+                        <div class="pure-control-group">
+                            {{ form.title.errors }}
+                            <label>Title</label>
+                            {{ form.title }}
+                        </div>
+
+                        <div class="pure-control-group">
+                            {{ form.location.errors }}
+                            <label>Location</label>
+                            {{ form.location }}
+                        </div>
+
+                        <div class="pure-control-group">
+                            {{ form.date.errors }}
+                            <label>Date</label>
+                            {{ form.date}}
+                        </div>
+
+  
+                         <div class="pure-control-group">
+                            {{ form.price.errors }}
+                            <label for"price">Costs: </label>      
+                            {{ form.price }}
+                        </div>
+
+
+                         <div class="pure-control-group">
+                            {{ form.tag.errors }}
+                            <label>Tag</label>
+                            {{ form.tag}}
+                        </div>  
+
+                      <input type="submit" value="Search" class="pure-button pure-button-primary"/>
+                        
+                    </fieldset>
                   </form>
+          </div>
+        </div>
+
+        <div class="pure-u-3-5">
+              <div class="l-box">
 
                   <br>
+
+                  <h3>Showing Results For:</h3> 
+                  <h5>
+                        {% if tag %}
+                            {{tag}} events
+                        {% else %}
+                            Events 
+                        {% endif %}
+
+                        {% if date %}
+                            on {{date}} 
+                        {% endif %}
+
+                        {% if price %}
+                            that cost ${{price}} or less 
+                        {% endif %}
+                        
+                        {% if query %}
+                            with the keywords: {{query}}
+                        {% endif %}
+                  </h5>
+              </div>
+          </div>
+      <div class="pure-g-r">
+
+          <div class="pure-u-4-5">
+              <div class="l-box">
 
                   <div id="search-results">
                       {% if show_results %}
@@ -26,13 +92,19 @@
                             {% if events %}
 
                                 {% for event in events %}
-                                  <h3>{{event.title}}</h3>
+                                  <div class="well">
+                                    <h3>{{event.title}}</h3>
+                                    <p>{{event.description}}</p>
+                                    <h4>{{event.location}}</h4>
+                                    <h5>{{event.date}} at {{event.time}} </h5>
+                                    <a class="pure-button pure-button-primary" href='/event/going/{{event.id}}/'>Going</a>
+                                 </div>
 
                                 {% endfor %}
                             
                             {% else %}
                                
-                                <h3>Sorry! No results found.</h3>
+                                <h3>Sorry! No results found!</h3>
                             
                             {% endif %}
 
@@ -45,6 +117,9 @@
              
                 </div>
             </div>
+        </div>
+
+
         </div>
     </div>
 </div>
