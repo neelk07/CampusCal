@@ -188,6 +188,19 @@ def event_save_page(request,graph):
         fid = me['id']
         fid = int(fid)
         new_event.host = fid
+        location = new_event.location
+        loc = location.replace(" ","+")
+        url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+Champaign,+IL&sensor=true'
+        serialized_data = urllib2.urlopen(url).read()
+        dt = json.loads(serialized_data)
+        lat = 0
+        lng = 0
+        if dt['status'] == 'OK':
+        	dt = dt['results']
+        	lat = dt[0]['geometry']['location']['lat']
+        	lng = dt[0]['geometry']['location']['lng']
+		new_event.lat = lat
+		new_event.lng = lng
         new_event.save()
         return HttpResponseRedirect('/profile/')
       else:
@@ -354,7 +367,7 @@ def map_view(request,graph):
 	retrieve_date = retrieve_date.replace(day = retrieve_date.day-1)
 
 	#exclude events that are created by you
-	recent_events = Event.objects.filter(date__gt=retrieve_date).order_by('-created').exclude(host = fid)[:5]
+	recent_events = Event.objects.filter(date__gt=retrieve_date).order_by('-created')
 	variables = RequestContext(request,{
 		'recent_events':recent_events,
 		
@@ -403,7 +416,7 @@ def illinois_union_events(request):
 	d = feedparser.parse('http://illinois.edu/calendar/rss/4061.xml')
 	location = "Illini Union"
 	loc = location.replace (" ", "+")
-	url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+IL&sensor=true'
+	url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+Champaign,+IL&sensor=true'
 	serialized_data = urllib2.urlopen(url).read()
 	data = json.loads(serialized_data)
 	data = data['results']
@@ -446,7 +459,7 @@ def lctc_film(request):
 	d = feedparser.parse('http://illinois.edu/calendar/rss/4761.xml')
 	location = "Foreign Language Building 1080"
 	loc = location.replace (" ", "+")
-	url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+IL&sensor=true'
+	url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+Champaign,+IL&sensor=true'
 	serialized_data = urllib2.urlopen(url).read()
 	data = json.loads(serialized_data)
 	data = data['results']
@@ -482,6 +495,85 @@ def lctc_film(request):
 			
 
 
+def general_event(request):
+
+	d = feedparser.parse('http://illinois.edu/calendar/rss/7.xml')
+	location = "Foreign Language Building 1080"
+	loc = location.replace (" ", "+")
+	url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+Champaign,+IL&sensor=true'
+	serialized_data = urllib2.urlopen(url).read()
+	data = json.loads(serialized_data)
+	data = data['results']
+	lat =  data[0]['geometry']['location']['lat']
+	lng = data[0]['geometry']['location']['lng']
+	#entries is list of all events from feed
+	for entry in d.entries:
+		title = entry['title']
+		description = entry['description']
+		link = entry['link']
+		date = entry['published']
+		date_list = entry['published_parsed']
+
+		#manipulation to get date
+		date_list = list(date_list)
+		date_list = datetime(date_list[0],date_list[1],date_list[2])
+		date_list = date_list.strftime('%Y-%m-%d')
+			
+		#retrieve and convert time from 24 hour to 12 hour clock and get time
+		words = date.split()
+		time = words[4]
+		d = datetime.strptime(time, "%H:%M:%S")
+		time = d.strftime("%I:%M %p")
+
+		#check for duplicate entry
+		repeat_event = Event.objects.filter(title = title, date = date_list, time = time).count()
+
+		#no similar event was found so add it to the db
+		if repeat_event == 0:
+			event = Event.objects.create(title=title, description=description, location=location,lat = lat, lng = lng, time=time, date=date_list, event_url = link)
+			tagged = Tag.objects.get(category='Social')
+			event.tag.add(tagged)
+
+
+def campus_recreation_events(request):
+
+	d = feedparser.parse('http://illinois.edu/calendar/rss/2628.xml')
+	location = "Foreign Language Building 1080"
+	loc = location.replace (" ", "+")
+	url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+Champaign,+IL&sensor=true'
+	serialized_data = urllib2.urlopen(url).read()
+	data = json.loads(serialized_data)
+	data = data['results']
+	lat =  data[0]['geometry']['location']['lat']
+	lng = data[0]['geometry']['location']['lng']
+	#entries is list of all events from feed
+	for entry in d.entries:
+		title = entry['title']
+		description = entry['description']
+		link = entry['link']
+		date = entry['published']
+		date_list = entry['published_parsed']
+
+		#manipulation to get date
+		date_list = list(date_list)
+		date_list = datetime(date_list[0],date_list[1],date_list[2])
+		date_list = date_list.strftime('%Y-%m-%d')
+			
+		#retrieve and convert time from 24 hour to 12 hour clock and get time
+		words = date.split()
+		time = words[4]
+		d = datetime.strptime(time, "%H:%M:%S")
+		time = d.strftime("%I:%M %p")
+
+		#check for duplicate entry
+		repeat_event = Event.objects.filter(title = title, date = date_list, time = time).count()
+
+		#no similar event was found so add it to the db
+		if repeat_event == 0:
+			event = Event.objects.create(title=title, description=description, location=location,lat = lat, lng = lng, time=time, date=date_list, event_url = link)
+			tagged = Tag.objects.get(category='Social')
+			event.tag.add(tagged)
+
 def krannert_events(request):
 
 
@@ -511,9 +603,9 @@ def krannert_events(request):
 			description = d['Description']
 			location = d['Location']
 			if len(location) < 10:
-				location = "Krannert Center For Performing Arts" + " - " + location
+				location = "Krannert Center For Performing Arts"
 			loc = location.replace (" ", "+")
-			url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+IL&sensor=true'
+			url = 'http://maps.googleapis.com/maps/api/geocode/json?address='+loc+',+Champaign,+IL&sensor=true'
 			serialized_data = urllib2.urlopen(url).read()
 			dt = json.loads(serialized_data)
 			if dt['status'] == 'OK':	

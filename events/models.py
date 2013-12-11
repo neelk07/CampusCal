@@ -34,11 +34,11 @@ class Event(models.Model):
     price = models.CharField(max_length = 100, blank=True)
     male = models.IntegerField(default='0')
     female = models.IntegerField(default='0')
-    
+
     event_url = models.URLField(blank=True)
     image_url = models.URLField(blank=True)
 
-    tag = models.ManyToManyField(Tag,blank=True, null=True)
+    tag = models.ManyToManyField(Tag, blank=True, null=True)
 
     def __unicode__(self):
         return self.title

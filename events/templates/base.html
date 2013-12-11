@@ -34,7 +34,7 @@
                 <li><a href="/search/">Discover</a></li>
                 <li><a href="/recent/">Recent Events</a></li>
                 <li><a href="#">About</a></li>
-                <li><a href="#">Blog</a></li>
+                <li><a href="/map/">Map</a></li>
                 {% if user.is_authenticated %}
                  <li><a href="/profile/">Profile</a></li>
                 <li><a href="{% url 'auth_logout' %}?next={{ request.path|urlencode }}" class="pure-button primary-button">Log Out</a><li>
